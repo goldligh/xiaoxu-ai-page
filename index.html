@@ -60,21 +60,7 @@
     display: flex; align-items: center; gap: 10px;
     padding: 0 16px;
   }
-  .logo-wrap {
-    position: relative; width: 42px; height: 42px; flex: none;
-    border-radius: 12px; background: linear-gradient(145deg, #f2f7ff, #dde9ff);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; user-select: none;
-    transition: transform .25s, box-shadow .25s;
-  }
-  .logo-wrap img { width: 34px; height: 34px; object-fit: contain; pointer-events: none; }
-  .logo-wrap.flash { animation: logoFlash .8s ease; }
-  @keyframes logoFlash {
-    0% { transform: scale(1); filter: brightness(1); box-shadow: 0 0 0 0 rgba(47,124,255,.5); }
-    35% { transform: scale(1.18); filter: brightness(1.45); box-shadow: 0 0 0 14px rgba(47,124,255,.12); }
-    100% { transform: scale(1); filter: brightness(1); box-shadow: 0 0 0 0 rgba(47,124,255,0); }
-  }
-  .spark-layer { position: absolute; inset: -20px; pointer-events: none; overflow: visible; }
+  .spark-layer { position: absolute; inset: -24px; pointer-events: none; overflow: visible; z-index: 3; }
   .spark {
     position: absolute; left: 50%; top: 50%;
     font-size: 14px; line-height: 1; color: #ffc53d;
@@ -167,35 +153,13 @@
     pointer-events: none; z-index: 1;
   }
 
-  /* 起飞序列 */
-  .robot-bob.arming .robot-pose { animation: arm .38s linear; }
-  @keyframes arm {
-    0%,100% { transform: translateX(0); }
-    20% { transform: translateX(-4px) rotate(-1.2deg); }
-    45% { transform: translateX(4px) rotate(1.2deg); }
-    70% { transform: translateX(-3px); }
-    90% { transform: translateX(2px); }
-  }
-  .robot-bob.flying .robot-pose { transform: translateY(-190px) scale(.9); transition-timing-function: cubic-bezier(.45,.05,.7,.4); }
-  .robot-bob.flying .robot-shadow { transform: translateX(-50%) scale(.35); opacity: .15; }
-  .robot-bob.landing .robot-pose { animation: land .65s cubic-bezier(.25,.9,.35,1.15); }
-  @keyframes land {
-    0% { transform: translateY(-190px) scale(.9); }
-    62% { transform: translateY(6px) scale(1.02); }
-    82% { transform: translateY(-3px) scale(.995); }
-    100% { transform: translateY(0) scale(1); }
-  }
-
-  /* 火焰粒子 */
-  .flame-layer { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: visible; }
-  .fp {
-    position: absolute; left: 50%; top: 60%; width: 8px; height: 8px; border-radius: 50%;
-    background: radial-gradient(circle, #ffd66e, #ff9f2e 55%, rgba(255,80,0,0) 75%);
-    animation: fpFly .9s ease-out forwards;
-  }
-  @keyframes fpFly {
-    0% { transform: translate(0,0) scale(1); opacity: 1; }
-    100% { transform: translate(var(--dx), 90px) scale(.15); opacity: 0; }
+  /* 高亮放大闪光 */
+  .robot-bob.spotlight .robot-pose { animation: spotGlow .95s cubic-bezier(.2,.8,.3,1.1); }
+  @keyframes spotGlow {
+    0% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0 rgba(255,197,61,0)); }
+    35% { transform: scale(1.14); filter: brightness(1.22) drop-shadow(0 0 26px rgba(255,197,61,.85)); }
+    60% { transform: scale(1.09); filter: brightness(1.12) drop-shadow(0 0 14px rgba(255,197,61,.45)); }
+    100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0 rgba(255,197,61,0)); }
   }
 
   /* 弧线箭头 */
@@ -259,6 +223,10 @@
 
   /* 热区按钮（透明） */
   .zone { position: absolute; top: 0; bottom: 0; border: none; background: transparent; cursor: pointer; z-index: 5; }
+  .zone .sr {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+  }
   .zone.left { left: 0; width: 30%; }
   .zone.center { left: 30%; width: 40%; }
   .zone.right { right: 0; width: 30%; }
@@ -363,21 +331,12 @@
   }
   .guide.open { transform: translateY(0); }
   .guide-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px 4px; }
-  .g-logo {
-    width: 42px; height: 42px; border-radius: 12px; border: 1.5px dashed var(--orange);
-    display: flex; align-items: center; justify-content: center; position: relative;
-    animation: dashGlow 2s ease-in-out infinite;
-  }
-  @keyframes dashGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,159,46,.35); } 50% { box-shadow: 0 0 0 6px rgba(255,159,46,.1); } }
-  .g-logo img { width: 30px; height: 30px; object-fit: contain; }
   .badge {
     position: absolute; width: 20px; height: 20px; border-radius: 50%;
     color: #fff; font-size: 11.5px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
     box-shadow: 0 3px 8px rgba(0,0,0,.18);
   }
-  .badge.b4 { right: -8px; bottom: -8px; background: var(--orange); }
-  .badge.b4::before { content: "4"; }
   .g-title { font-size: 17px; font-weight: 700; }
   .g-sub { font-size: 11px; color: var(--ink-3); }
   .guide-head .spacer { flex: 1; }
@@ -461,10 +420,6 @@
 
     <!-- 头部 -->
     <header>
-      <div class="logo-wrap" id="logoBtn" title="点徐工图标 · 高亮闪光">
-        <img src="assets/logo.png" alt="徐工">
-        <div class="spark-layer" id="sparkLayer"></div>
-      </div>
       <div class="title-box">
         <div class="title-row">
           <span class="name">小徐</span>
@@ -503,11 +458,11 @@
 
         <div class="robot-shadow" id="robotShadow"></div>
         <div class="robot-bob" id="robotBob">
+          <div class="spark-layer" id="robotSparkLayer"></div>
           <div class="robot-pose" id="robotPose">
             <img src="assets/robot-front.png" data-pose="front" class="show" alt="小徐">
             <img src="assets/robot-left.png" data-pose="left" alt="小徐向左">
             <img src="assets/robot-right.png" data-pose="right" alt="小徐向右">
-            <img src="assets/robot-fly.png" data-pose="fly" alt="小徐起飞">
           </div>
         </div>
 
@@ -526,11 +481,10 @@
 
         <div class="dot-ind left" id="dotLeft"><i></i></div>
         <div class="dot-ind right" id="dotRight"><i></i></div>
-        <div class="flame-layer" id="flameLayer"></div>
 
-        <button class="zone left" data-act="left" aria-label="点左侧空白"></button>
-        <button class="zone center" data-act="fly" aria-label="点背部飞行器"></button>
-        <button class="zone right" data-act="right" aria-label="点右侧空白"></button>
+        <button class="zone left" data-act="left" aria-label="点左侧空白"><span class="sr">左侧</span></button>
+        <button class="zone center" data-act="sparkle" aria-label="点小徐"><span class="sr">小徐</span></button>
+        <button class="zone right" data-act="right" aria-label="点右侧空白"><span class="sr">右侧</span></button>
       </section>
 
       <!-- 欢迎面板 -->
@@ -544,17 +498,17 @@
           </button>
         </div>
         <div class="modes" id="modes">
-          <button class="mode active" data-mode="深度思考">
-            <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M12 6.8l1.3 2.7 2.9.4-2.1 2 .5 2.9L12 13.6l-2.6 1.2.5-2.9-2.1-2 2.9-.4z" fill="#fff"/></svg>
-            深度思考
-          </button>
-          <button class="mode" data-mode="故障诊断">
-            <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M14.9 6.9a3.6 3.6 0 0 0-4.7 4.5L6 15.6a1.6 1.6 0 0 0 2.3 2.3l4.2-4.2a3.6 3.6 0 0 0 4.5-4.7l-2.3 2.3-2-.5-.5-2z" fill="#fff"/></svg>
-            故障诊断
-          </button>
-          <button class="mode" data-mode="产品问答">
+          <button class="mode active" data-mode="产品知识问答">
             <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M6.8 8.2h10.4a1 1 0 0 1 1 1v5.2a1 1 0 0 1-1 1H11l-3 2.4v-2.4H6.8a1 1 0 0 1-1-1V9.2a1 1 0 0 1 1-1z" fill="#fff"/><path d="M10.3 10.9a1.9 1.9 0 1 1 2.9 1.6c-.6.4-.7.6-.7 1.2" stroke="#2f7cff" stroke-width="1.3" stroke-linecap="round" fill="none"/><circle cx="12.4" cy="15.6" r=".9" fill="#2f7cff"/></svg>
-            产品问答
+            产品知识问答
+          </button>
+          <button class="mode" data-mode="场景解决方案">
+            <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M14.9 6.9a3.6 3.6 0 0 0-4.7 4.5L6 15.6a1.6 1.6 0 0 0 2.3 2.3l4.2-4.2a3.6 3.6 0 0 0 4.5-4.7l-2.3 2.3-2-.5-.5-2z" fill="#fff"/></svg>
+            场景解决方案
+          </button>
+          <button class="mode" data-mode="金融解决方案">
+            <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M8.5 7.5 12 11.5l3.5-4M12 11.5V17M8.8 13.2h6.4M8.8 15.6h6.4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            金融解决方案
           </button>
         </div>
       </section>
@@ -580,7 +534,6 @@
     <!-- 交互热点说明 -->
     <div class="guide" id="guide">
       <div class="guide-head">
-        <div class="g-logo"><img src="assets/logo.png" alt="徐工"><span class="badge b4"></span></div>
         <div class="title-box">
           <div class="g-title">小徐</div>
           <div class="g-sub">交互热点说明</div>
@@ -590,18 +543,17 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
       </div>
-      <div class="g-heading">四处可点，处处有回应</div>
+      <div class="g-heading">处处可点，处处有回应</div>
       <div class="g-stage">
         <img src="assets/robot-front.png" alt="小徐">
         <div class="hotbox hb-left" data-act="left"><span class="badge b1"></span></div>
         <div class="hotbox hb-right" data-act="right"><span class="badge b2"></span></div>
-        <div class="hotbox hb-jet" data-act="fly"><span class="badge b3"></span></div>
+        <div class="hotbox hb-jet" data-act="sparkle"><span class="badge b3"></span></div>
       </div>
       <div class="g-list">
         <div class="g-item" data-act="left"><span class="g-num n1">1</span><div><div class="t1">点击屏幕左侧</div><div class="t2">小徐向左转身，抬手打招呼</div></div></div>
         <div class="g-item" data-act="right"><span class="g-num n2">2</span><div><div class="t1">点击屏幕右侧</div><div class="t2">小徐向右转身，抬手打招呼</div></div></div>
-        <div class="g-item" data-act="fly"><span class="g-num n3">3</span><div><div class="t1">点击背部飞行器</div><div class="t2">尾部喷射火焰，小徐腾空起飞</div></div></div>
-        <div class="g-item" data-act="logo"><span class="g-num n4">4</span><div><div class="t1">点击徐工图标</div><div class="t2">图标高亮放大，闪出星光</div></div></div>
+        <div class="g-item" data-act="sparkle"><span class="g-num n3">3</span><div><div class="t1">点击小徐</div><div class="t2">高亮放大，闪出星光</div></div></div>
       </div>
     </div>
 
@@ -617,14 +569,12 @@
     idle: '下午好，需要我帮你做点什么？',
     left: '好嘞，我往左边看看',
     right: '好嘞，我往右边看看',
-    fly: '点火起飞，跟我出发！',
-    logo: '我是徐工智能助手小徐',
+    sparkle: '看，我在闪闪发光！',
   };
   const BANNERS = {
     left: '点左侧空白 · 小徐向左转身',
     right: '点右侧空白 · 小徐向右转身',
-    fly: '点背部飞行器 · 喷火起飞',
-    logo: '点徐工图标 · 高亮闪光',
+    sparkle: '点小徐 · 高亮放大闪出星光',
   };
   const CHIP_SETS = [
     ['如何查询设备保修信息', '怎么预约上门维保服务', '设备故障如何快速报修'],
@@ -705,76 +655,39 @@
     scheduleIdle();
   }
 
-  function actFly() {
+  function actSparkle() {
     if (state.busy) return;
-    state.busy = true;
-    showBanner(BANNERS.fly);
-    setGreeting(GREETINGS.fly);
-    clearTimeout(state.timer);
-
-    robotBob.classList.add('arming');
-    setTimeout(() => {
-      robotBob.classList.remove('arming');
-      setPose('fly');
-      spawnFlames();
-      robotBob.classList.add('flying');
-    }, 400);
-
-    setTimeout(() => { robotBob.classList.remove('flying'); robotBob.classList.add('landing'); }, 2100);
-    setTimeout(() => {
-      robotBob.classList.remove('landing');
-      setPose('front');
-      state.busy = false;
-      scheduleIdle();
-    }, 2800);
-  }
-
-  function spawnFlames() {
-    const layer = $('#flameLayer');
-    for (let i = 0; i < 14; i++) {
-      const s = document.createElement('span');
-      s.className = 'fp';
-      s.style.setProperty('--dx', (Math.random() * 140 - 70) + 'px');
-      s.style.top = (52 + Math.random() * 14) + '%';
-      s.style.animationDelay = (Math.random() * .35) + 's';
-      s.style.width = s.style.height = (5 + Math.random() * 7) + 'px';
-      layer.appendChild(s);
-      setTimeout(() => s.remove(), 1400);
-    }
-  }
-
-  function actLogo() {
-    if (state.busy) return;
-    showBanner(BANNERS.logo);
-    setGreeting(GREETINGS.logo);
-    const wrap = $('#logoBtn');
-    restartAnim(wrap, 'flash');
-    const layer = $('#sparkLayer');
-    layer.innerHTML = '';
-    for (let i = 0; i < 9; i++) {
-      const sp = document.createElement('span');
-      sp.className = 'spark';
-      sp.textContent = '✦';
-      const ang = (i / 9) * Math.PI * 2 + Math.random() * .5;
-      const dist = 26 + Math.random() * 22;
-      sp.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
-      sp.style.setProperty('--dy', Math.sin(ang) * dist + 'px');
-      sp.style.setProperty('--sc', (0.7 + Math.random() * 0.9).toFixed(2));
-      sp.style.setProperty('--rot', (Math.random() * 220 - 110).toFixed(0) + 'deg');
-      sp.style.animationDelay = (Math.random() * .12) + 's';
-      layer.appendChild(sp);
-    }
+    showBanner(BANNERS.sparkle);
+    setGreeting(GREETINGS.sparkle);
+    restartAnim(robotBob, 'spotlight');
+    spawnSparks($('#robotSparkLayer'), 14, 60, 130);
     scheduleIdle();
   }
 
-  const ACTIONS = { left: actLeft, right: actRight, fly: actFly, logo: actLogo };
+  function spawnSparks(layer, count, minDist, maxDist) {
+    layer.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const sp = document.createElement('span');
+      sp.className = 'spark';
+      sp.textContent = '✦';
+      const ang = (i / count) * Math.PI * 2 + Math.random() * .6;
+      const dist = minDist + Math.random() * (maxDist - minDist);
+      sp.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+      sp.style.setProperty('--dy', Math.sin(ang) * dist * 0.8 + 'px');
+      sp.style.setProperty('--sc', (0.7 + Math.random() * 1.1).toFixed(2));
+      sp.style.setProperty('--rot', (Math.random() * 260 - 130).toFixed(0) + 'deg');
+      sp.style.animationDelay = (Math.random() * .18) + 's';
+      sp.style.fontSize = (12 + Math.random() * 8) + 'px';
+      layer.appendChild(sp);
+    }
+  }
+
+  const ACTIONS = { left: actLeft, right: actRight, sparkle: actSparkle };
 
   /* ---------- 事件绑定 ---------- */
-  $$('.zone').forEach((z) => z.addEventListener('click', () => {
-    ACTIONS[z.dataset.act]();
-    dismissHint();
-  }));
-  $('#logoBtn').addEventListener('click', () => { ACTIONS.logo(); dismissHint(); });
+  $$('.zone').forEach((z) => {
+    z.onclick = () => { ACTIONS[z.dataset.act](); dismissHint(); };
+  });
   $('#voiceBtn').addEventListener('click', function () {
     this.classList.toggle('on');
     toast(this.classList.contains('on') ? '语音播报已开启' : '语音播报已关闭');
@@ -782,7 +695,7 @@
   $('#resetBtn').addEventListener('click', () => {
     clearTimeout(state.timer);
     state.busy = false;
-    robotBob.classList.remove('arming', 'flying', 'landing');
+    robotBob.classList.remove('spotlight');
     setPose('front');
     setGreeting(GREETINGS.idle);
     hideBanner();
@@ -793,12 +706,14 @@
   /* 交互说明 */
   const guide = $('#guide');
   $('#guideBtn').addEventListener('click', () => guide.classList.add('open'));
-  $('#guideClose').addEventListener('click', () => guide.classList.remove('open'));
-  $$('.g-item, .hotbox').forEach((el) => el.addEventListener('click', () => {
-    guide.classList.remove('open');
-    setTimeout(() => ACTIONS[el.dataset.act] && ACTIONS[el.dataset.act](), 250);
-    dismissHint();
-  }));
+  $('#guideClose').onclick = () => guide.classList.remove('open');
+  $$('.g-item, .hotbox').forEach((el) => {
+    el.onclick = () => {
+      guide.classList.remove('open');
+      setTimeout(() => ACTIONS[el.dataset.act] && ACTIONS[el.dataset.act](), 250);
+      dismissHint();
+    };
+  });
 
   /* 提示涟漪：首次交互后消失 */
   function dismissHint() {
@@ -846,7 +761,7 @@
   const REPLIES = [
     { k: ['保修', '质保'], r: '您好！您可以登录徐工官网服务专区，输入设备编号查询保修信息与质保期限；也可以拨打服务热线 400-110-9999，由客服协助查询。' },
     { k: ['预约', '维保', '保养', '上门'], r: '收到！上门维保可在徐工服务小程序预约：选择设备型号、填写故障描述后，系统会自动指派就近的服务工程师，一般 24 小时内响应。' },
-    { k: ['报修', '故障', '维修', '坏了'], r: '设备报修请准备好设备序列号与故障现象描述，拨打 400-110-9999 服务热线，或切换到「故障诊断」模式，我会逐步帮您排查。' },
+    { k: ['报修', '故障', '维修', '坏了'], r: '设备报修请准备好设备序列号与故障现象描述，拨打 400-110-9999 服务热线，或切换到「场景解决方案」模式，我会逐步帮您排查。' },
     { k: ['配件', '零件', '购买'], r: '原厂配件可通过徐工配件商城或当地授权经销商购买，正品保障、全国联保，支持在线查询物流进度。' },
     { k: ['网点', '服务', '附近', '地址'], r: '您可以在徐工官网「服务网点」页面按城市查询最近网点，支持地图导航与电话直连，部分地区还提供驻矿驻点服务。' },
     { k: ['你好', '您好', 'hi', 'Hi'], r: '您好！我是徐工智能助手小徐，可以帮您查保修、约维保、报故障，也可以点我周围的空白区域和我互动哦～' },
