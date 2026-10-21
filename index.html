@@ -162,6 +162,38 @@
     100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0 rgba(255,197,61,0)); }
   }
 
+  /* 下拉蓄力 + 喷火升空 */
+  .stage { touch-action: none; }
+  .robot-pose.dragging { transition: none; }
+  .robot-bob.charged .robot-pose {
+    filter: brightness(1.18) drop-shadow(0 0 20px rgba(255,197,61,.75));
+  }
+  .robot-pose.launch { animation: launchUp .8s cubic-bezier(.55,.06,.75,.4) forwards; }
+  @keyframes launchUp {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(-460px) scale(.85); }
+  }
+  .robot-bob.launching .robot-shadow { transform: translateX(-50%) scale(.3); opacity: .12; transition: transform .8s ease, opacity .8s ease; }
+  .robot-pose.landing { animation: land .7s cubic-bezier(.25,.9,.35,1.15); }
+  @keyframes land {
+    0% { transform: translateY(-460px) scale(.85); }
+    62% { transform: translateY(8px) scale(1.03); }
+    82% { transform: translateY(-4px) scale(.995); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  /* 火焰粒子 */
+  .flame-layer { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: visible; }
+  .fp {
+    position: absolute; left: 50%; top: 58%; width: 10px; height: 10px; border-radius: 50%;
+    background: radial-gradient(circle, #ffe9a8, #ff9f2e 55%, rgba(255,90,0,0) 78%);
+    animation: fpFly 1s ease-out forwards;
+  }
+  @keyframes fpFly {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), 160px) scale(.2); opacity: 0; }
+  }
+
   /* 弧线箭头 */
   .arc { position: absolute; left: 50%; top: 1%; transform: translateX(-50%); width: 74%; z-index: 4; pointer-events: none; opacity: 0; }
   .arc.play { opacity: 1; }
@@ -463,6 +495,7 @@
             <img src="assets/robot-front.png" data-pose="front" class="show" alt="小徐">
             <img src="assets/robot-left.png" data-pose="left" alt="小徐向左">
             <img src="assets/robot-right.png" data-pose="right" alt="小徐向右">
+            <img src="assets/robot-fly.png" data-pose="fly" alt="小徐升空">
           </div>
         </div>
 
@@ -481,6 +514,7 @@
 
         <div class="dot-ind left" id="dotLeft"><i></i></div>
         <div class="dot-ind right" id="dotRight"><i></i></div>
+        <div class="flame-layer" id="flameLayer"></div>
 
         <button class="zone left" data-act="left" aria-label="点左侧空白"><span class="sr">左侧</span></button>
         <button class="zone center" data-act="sparkle" aria-label="点小徐"><span class="sr">小徐</span></button>
@@ -554,6 +588,7 @@
         <div class="g-item" data-act="left"><span class="g-num n1">1</span><div><div class="t1">点击屏幕左侧</div><div class="t2">小徐向左转身，抬手打招呼</div></div></div>
         <div class="g-item" data-act="right"><span class="g-num n2">2</span><div><div class="t1">点击屏幕右侧</div><div class="t2">小徐向右转身，抬手打招呼</div></div></div>
         <div class="g-item" data-act="sparkle"><span class="g-num n3">3</span><div><div class="t1">点击小徐</div><div class="t2">高亮放大，闪出星光</div></div></div>
+        <div class="g-item"><span class="g-num n4">4</span><div><div class="t1">下拉小徐</div><div class="t2">按住下拉蓄力，松手喷火升空</div></div></div>
       </div>
     </div>
 
@@ -570,11 +605,13 @@
     left: '好嘞，我往左边看看',
     right: '好嘞，我往右边看看',
     sparkle: '看，我在闪闪发光！',
+    launch: '点火起飞，跟我出发！',
   };
   const BANNERS = {
     left: '点左侧空白 · 小徐向左转身',
     right: '点右侧空白 · 小徐向右转身',
     sparkle: '点小徐 · 高亮放大闪出星光',
+    launch: '下拉松手 · 喷火升空',
   };
   const CHIP_SETS = [
     ['如何查询设备保修信息', '怎么预约上门维保服务', '设备故障如何快速报修'],
@@ -682,11 +719,103 @@
     }
   }
 
+  function spawnFlames() {
+    const layer = $('#flameLayer');
+    for (let i = 0; i < 24; i++) {
+      const s = document.createElement('span');
+      s.className = 'fp';
+      s.style.setProperty('--dx', (Math.random() * 180 - 90) + 'px');
+      s.style.top = (54 + Math.random() * 16) + '%';
+      s.style.animationDelay = (Math.random() * .4) + 's';
+      const sz = 6 + Math.random() * 10;
+      s.style.width = s.style.height = sz + 'px';
+      layer.appendChild(s);
+      setTimeout(() => s.remove(), 1600);
+    }
+  }
+
+  /* ---------- 下拉喷火升空 ---------- */
+  const THRESHOLD = 70;
+  let suppressUntil = 0;
+  const pull = { on: false, y0: 0, dy: 0, moved: false, captured: false, toasted: false };
+
+  function doLaunch() {
+    state.busy = true;
+    showBanner(BANNERS.launch);
+    setGreeting(GREETINGS.launch);
+    clearTimeout(state.timer);
+    robotPose.classList.remove('dragging');
+    robotPose.style.transition = 'transform .25s ease-out';
+    robotPose.style.transform = '';
+    robotBob.classList.add('launching');
+    setTimeout(() => {
+      robotPose.style.transition = '';
+      setPose('fly');
+      spawnFlames();
+      robotPose.classList.add('launch');
+    }, 180);
+    setTimeout(() => {
+      robotPose.classList.remove('launch');
+      robotPose.classList.add('landing');
+    }, 1500);
+    setTimeout(() => {
+      robotPose.classList.remove('landing');
+      robotBob.classList.remove('launching');
+      setPose('front');
+      state.busy = false;
+      scheduleIdle();
+    }, 2200);
+  }
+
+  stage.addEventListener('pointerdown', (e) => {
+    if (state.busy || guideOpen()) return;
+    pull.on = true; pull.y0 = e.clientY; pull.dy = 0;
+    pull.moved = false; pull.captured = false; pull.toasted = false;
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (!pull.on) return;
+    const dy = Math.max(0, e.clientY - pull.y0);
+    if (!pull.captured && dy > 12) {
+      pull.captured = true; pull.moved = true;
+      try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+    pull.dy = Math.min(dy, 150);
+    robotPose.classList.add('dragging');
+    robotPose.style.transform = 'translateY(' + (pull.dy * 0.55) + 'px) scale(' + (1 + pull.dy / 1000) + ')';
+    const charged = pull.dy > THRESHOLD;
+    robotBob.classList.toggle('charged', charged);
+    if (charged && !pull.toasted) { pull.toasted = true; toast('松手发射！', 900); }
+  });
+  function endPull() {
+    if (!pull.on) return;
+    pull.on = false;
+    robotBob.classList.remove('charged');
+    if (pull.moved) suppressUntil = Date.now() + 450;
+    if (pull.dy > THRESHOLD && !state.busy) {
+      pull.dy = 0;
+      doLaunch();
+    } else {
+      robotPose.style.transition = 'transform .45s cubic-bezier(.2,.8,.3,1.2)';
+      robotPose.style.transform = '';
+      robotPose.classList.remove('dragging');
+      setTimeout(() => { robotPose.style.transition = ''; }, 480);
+      pull.dy = 0;
+    }
+  }
+  stage.addEventListener('pointerup', endPull);
+  stage.addEventListener('pointercancel', endPull);
+
+  function guideOpen() { return guide.classList.contains('open'); }
+
   const ACTIONS = { left: actLeft, right: actRight, sparkle: actSparkle };
 
   /* ---------- 事件绑定 ---------- */
   $$('.zone').forEach((z) => {
-    z.onclick = () => { ACTIONS[z.dataset.act](); dismissHint(); };
+    z.onclick = () => {
+      if (Date.now() < suppressUntil) return;
+      ACTIONS[z.dataset.act]();
+      dismissHint();
+    };
   });
   $('#voiceBtn').addEventListener('click', function () {
     this.classList.toggle('on');
@@ -695,7 +824,11 @@
   $('#resetBtn').addEventListener('click', () => {
     clearTimeout(state.timer);
     state.busy = false;
-    robotBob.classList.remove('spotlight');
+    pull.on = false;
+    robotBob.classList.remove('spotlight', 'charged', 'launching');
+    robotPose.classList.remove('launch', 'landing', 'dragging');
+    robotPose.style.transition = '';
+    robotPose.style.transform = '';
     setPose('front');
     setGreeting(GREETINGS.idle);
     hideBanner();
@@ -827,7 +960,7 @@
 
   /* ---------- 入场 ---------- */
   window.addEventListener('load', () => {
-    setTimeout(() => toast('点击小徐两侧的空白、背部飞行器或左上角图标，看看会发生什么～', 2600), 900);
+    setTimeout(() => toast('点小徐两侧和她本身互动，按住下拉还能喷火升空～', 2800), 900);
   });
 })();
 </script>
