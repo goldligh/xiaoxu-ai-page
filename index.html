@@ -563,25 +563,6 @@
             <div class="port-tag" id="portTag">
               <span class="pt-dot"></span><span class="pt-line"></span><span class="pt-label">左手接口</span>
             </div>
-            <img class="think-arm" src="assets/arm-think.png" alt="">
-            <div class="think-eyes">
-              <svg viewBox="0 0 100 48">
-                <ellipse cx="25" cy="24" rx="27" ry="24" fill="#ffdcc6"/>
-                <ellipse cx="75" cy="24" rx="27" ry="24" fill="#ffdcc6"/>
-                <ellipse cx="25" cy="24" rx="13" ry="14.5" fill="#fff"/>
-                <ellipse cx="75" cy="24" rx="13" ry="14.5" fill="#fff"/>
-                <circle cx="19" cy="17" r="6.5" fill="#2b2b3d"/>
-                <circle cx="69" cy="17" r="6.5" fill="#2b2b3d"/>
-                <circle cx="17" cy="15" r="2.2" fill="#fff"/>
-                <circle cx="67" cy="15" r="2.2" fill="#fff"/>
-                <path d="M11 14 Q25 4 39 14" stroke="#d9ae95" stroke-width="2" fill="none" stroke-linecap="round"/>
-                <path d="M61 14 Q75 4 89 14" stroke="#d9ae95" stroke-width="2" fill="none" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="think-bubble">
-              <span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span>
-              <i class="tb-tail"></i>
-            </div>
           </div>
         </div>
 
@@ -951,7 +932,7 @@
 
   function guideOpen() { return guide.classList.contains('open'); }
 
-  /* ---------- 属具组装：每 5 秒循环换装（抬臂→换属具→落下） ---------- */
+  /* ---------- 属具组装：静态展示（换装循环已暂时移除） ---------- */
   let toolIdx = 0;
   function setTool(i) {
     toolIdx = ((i % TOOLS.length) + TOOLS.length) % TOOLS.length;
@@ -960,28 +941,6 @@
     setGreeting(toolStatus(toolIdx));
     state.chipAlt = false;
     renderToolChips();
-  }
-  function cycleTool() {
-    if (state.busy || pull.on || guideOpen()) return;
-    const next = (toolIdx + 1) % TOOLS.length;
-    armTool.classList.remove('cycling');
-    void armTool.offsetWidth;
-    armTool.classList.add('cycling');
-    setTimeout(() => setTool(next), 400);
-    setTimeout(() => armTool.classList.remove('cycling'), 980);
-    setTimeout(() => doThink(), 1260);
-  }
-  setInterval(cycleTool, 5000);
-
-  /* ---------- 思考动作（换装间隙） ---------- */
-  function doThink() {
-    if (guideOpen()) return;
-    state.busy = true;
-    robotBob.classList.add('thinking');
-    setTimeout(() => {
-      robotBob.classList.remove('thinking');
-      state.busy = false;
-    }, 2100);
   }
 
   const ACTIONS = { left: actLeft, right: actRight, sparkle: actSparkle };
@@ -1046,7 +1005,6 @@
       b.textContent = text;
       b.style.animationDelay = (i * 0.06) + 's';
       b.addEventListener('click', () => {
-        if (text.includes('更换其他属具')) { cycleTool(); return; }
         input.value = text;
         input.dispatchEvent(new Event('input'));
         input.focus();
