@@ -141,7 +141,7 @@
     transition: transform .55s cubic-bezier(.2,.8,.3,1.12);
     will-change: transform;
   }
-  .robot-pose img {
+  .robot-pose img[data-pose] {
     position: absolute; inset: 0; margin: auto;
     max-width: 100%; max-height: 100%; object-fit: contain;
     opacity: 0; transform: scale(.94);
@@ -149,7 +149,7 @@
     pointer-events: none;
     filter: drop-shadow(0 14px 18px rgba(40, 80, 180, .12));
   }
-  .robot-pose img.show { opacity: 1; transform: scale(1); }
+  .robot-pose img[data-pose].show { opacity: 1; transform: scale(1); }
 
   .robot-shadow {
     position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%);
@@ -159,7 +159,29 @@
     pointer-events: none; z-index: 1;
   }
 
-  .robot-pose.dragging img { transition: opacity .06s linear; transform: scale(1); }
+  .robot-pose.dragging img[data-pose] { transition: opacity .06s linear; transform: scale(1); }
+
+  /* 右臂属具循环 */
+  .arm-tool {
+    position: absolute; left: 51%; top: 43%; width: 29%;
+    z-index: 2; pointer-events: none;
+    transform: rotate(-22deg); transform-origin: 24% 58%;
+    transition: opacity .3s;
+  }
+  .arm-tool.hidden { opacity: 0; }
+  .arm-tool img { width: 100%; display: block; filter: drop-shadow(0 8px 12px rgba(20,40,110,.4)); }
+  .arm-tool.cycling { animation: toolCycle .95s cubic-bezier(.34,.7,.3,1); }
+  @keyframes toolCycle {
+    0%, 100% { transform: rotate(-22deg) translateY(0); }
+    38%, 58% { transform: rotate(-30deg) translateY(-32%); }
+  }
+  .tool-tag {
+    position: absolute; left: 55%; top: -6px; transform: translate(-50%, -100%);
+    background: rgba(23,32,56,.88); color: #fff; font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 12px; white-space: nowrap;
+    opacity: 0; transition: opacity .3s;
+  }
+  .tool-tag.show { opacity: 1; }
 
   /* 高亮放大闪光 */
   .robot-bob.spotlight .robot-pose { animation: spotGlow .95s cubic-bezier(.2,.8,.3,1.1); }
@@ -468,6 +490,10 @@
             <img src="assets/robot-left.png" data-pose="left" alt="小徐向左">
             <img src="assets/robot-right.png" data-pose="right" alt="小徐向右">
             <img src="assets/robot-fly.png" data-pose="fly" alt="小徐升空">
+            <div class="arm-tool" id="armTool">
+              <img id="toolImg" src="assets/tool-hammer.png" alt="右臂属具">
+              <div class="tool-tag" id="toolTag"></div>
+            </div>
           </div>
         </div>
 
@@ -586,6 +612,7 @@
     right: $('#robotPose img[data-pose="right"]'),
   };
   const banner = $('#banner'), bannerText = $('#bannerText');
+  const armTool = $('#armTool'), toolImg = $('#toolImg'), toolTag = $('#toolTag');
   const greeting = $('#greeting'), panel = $('#panel'), chatlog = $('#chatlog');
   const toastEl = $('#toast'), input = $('#input'), inputbar = $('#inputbar');
   const chipsBox = $('#chips');
@@ -601,6 +628,7 @@
   function setPose(name) {
     $$('#robotPose img').forEach((img) => img.classList.toggle('show', img.dataset.pose === name));
     state.pose = name;
+    armTool.classList.toggle('hidden', name !== 'front');
   }
 
   function setGreeting(text) {
@@ -714,6 +742,7 @@
     POSES.front.style.transform = 'scale(1)';
     POSES[side].style.transform = 'scale(1)';
     POSES[other].style.transform = 'scale(1)';
+    armTool.style.opacity = String(1 - p);
   }
 
   function clearInlinePoses() {
@@ -722,6 +751,7 @@
       POSES[k].style.transform = '';
     });
     robotShadow.style.transform = '';
+    armTool.style.opacity = '';
   }
 
   function springBack() {
@@ -838,6 +868,33 @@
 
   function guideOpen() { return guide.classList.contains('open'); }
 
+  /* ---------- 右臂属具：每 5 秒循环换装（抬臂→换属具→落下） ---------- */
+  const TOOLS = [
+    { src: 'assets/tool-hammer.png', name: '破碎锤 Breaking Hammer' },
+    { src: 'assets/tool-claw.png', name: '莲花爪 Lotus Claw' },
+    { src: 'assets/tool-scissors.png', name: '鹰嘴剪 Olecranon Scissors' },
+  ];
+  let toolIdx = 0;
+  function setTool(i) {
+    toolIdx = ((i % TOOLS.length) + TOOLS.length) % TOOLS.length;
+    toolImg.src = TOOLS[toolIdx].src;
+  }
+  function cycleTool() {
+    if (state.busy || pull.on || guideOpen()) return;
+    const next = (toolIdx + 1) % TOOLS.length;
+    toolTag.textContent = TOOLS[next].name;
+    toolTag.classList.add('show');
+    armTool.classList.remove('cycling');
+    void armTool.offsetWidth;
+    armTool.classList.add('cycling');
+    setTimeout(() => setTool(next), 400);
+    setTimeout(() => {
+      armTool.classList.remove('cycling');
+      toolTag.classList.remove('show');
+    }, 980);
+  }
+  setInterval(cycleTool, 5000);
+
   const ACTIONS = { left: actLeft, right: actRight, sparkle: actSparkle };
 
   /* ---------- 事件绑定 ---------- */
@@ -862,6 +919,8 @@
     robotPose.style.transition = '';
     robotPose.style.transform = '';
     clearInlinePoses();
+    armTool.classList.remove('cycling', 'hidden');
+    toolTag.classList.remove('show');
     setPose('front');
     setGreeting(GREETINGS.idle);
     hideBanner();
