@@ -183,6 +183,47 @@
   }
   .tool-tag.show { opacity: 1; }
 
+  /* 思考动作：左手托腮 + 若有所思眼神 + 省略号气泡 */
+  .think-arm {
+    position: absolute; left: 32.5%; top: 11%; width: 30%;
+    z-index: 2; pointer-events: none;
+    opacity: 0; transform: rotate(8deg) translateY(18px) scale(.95);
+    transform-origin: 72% 92%;
+    transition: opacity .45s ease, transform .55s cubic-bezier(.2,.8,.3,1.2);
+  }
+  .robot-bob.thinking .think-arm { opacity: 1; transform: rotate(-7deg) translateY(0) scale(1); }
+  .think-eyes {
+    position: absolute; left: 36%; top: 25.5%; width: 20%;
+    z-index: 2; pointer-events: none; opacity: 0;
+    transition: opacity .3s ease .18s;
+  }
+  .think-eyes svg { width: 100%; display: block; }
+  .robot-bob.thinking .think-eyes { opacity: 1; }
+  .think-bubble {
+    position: absolute; left: 47%; top: -7%;
+    transform: translateX(-50%) translateY(10px) scale(.5);
+    z-index: 3; pointer-events: none;
+    background: #fff; border: 1.5px solid #e8edf5; border-radius: 16px;
+    padding: 8px 13px 9px; display: flex; gap: 5px; align-items: center;
+    box-shadow: 0 8px 20px rgba(31,68,140,.16);
+    opacity: 0;
+    transition: opacity .3s ease .32s, transform .45s cubic-bezier(.2,.8,.3,1.35) .32s;
+  }
+  .robot-bob.thinking .think-bubble { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  .tb-dot { width: 7px; height: 7px; border-radius: 50%; background: #9aa5b8; opacity: .25; animation: tbDot 1.1s infinite; }
+  .tb-dot:nth-child(2) { animation-delay: .18s; }
+  .tb-dot:nth-child(3) { animation-delay: .36s; }
+  @keyframes tbDot {
+    0%, 60%, 100% { opacity: .25; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
+  .tb-tail {
+    position: absolute; left: calc(50% - 6px); bottom: -6.5px;
+    width: 11px; height: 11px; background: #fff;
+    border-right: 1.5px solid #e8edf5; border-bottom: 1.5px solid #e8edf5;
+    transform: rotate(45deg); border-bottom-right-radius: 3px;
+  }
+
   /* 高亮放大闪光 */
   .robot-bob.spotlight .robot-pose { animation: spotGlow .95s cubic-bezier(.2,.8,.3,1.1); }
   @keyframes spotGlow {
@@ -494,10 +535,27 @@
               <img id="toolImg" src="assets/tool-hammer.png" alt="右臂属具">
               <div class="tool-tag" id="toolTag"></div>
             </div>
+            <img class="think-arm" src="assets/arm-think.png" alt="">
+            <div class="think-eyes">
+              <svg viewBox="0 0 100 48">
+                <ellipse cx="25" cy="24" rx="27" ry="24" fill="#ffdcc6"/>
+                <ellipse cx="75" cy="24" rx="27" ry="24" fill="#ffdcc6"/>
+                <ellipse cx="25" cy="24" rx="13" ry="14.5" fill="#fff"/>
+                <ellipse cx="75" cy="24" rx="13" ry="14.5" fill="#fff"/>
+                <circle cx="19" cy="17" r="6.5" fill="#2b2b3d"/>
+                <circle cx="69" cy="17" r="6.5" fill="#2b2b3d"/>
+                <circle cx="17" cy="15" r="2.2" fill="#fff"/>
+                <circle cx="67" cy="15" r="2.2" fill="#fff"/>
+                <path d="M11 14 Q25 4 39 14" stroke="#d9ae95" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M61 14 Q75 4 89 14" stroke="#d9ae95" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="think-bubble">
+              <span class="tb-dot"></span><span class="tb-dot"></span><span class="tb-dot"></span>
+              <i class="tb-tail"></i>
+            </div>
           </div>
         </div>
-
-        <div class="robot-shadow" id="robotShadow"></div>
 
         <button class="zone left" data-act="left" aria-label="点左侧空白"><span class="sr">左侧</span></button>
         <button class="zone center" data-act="sparkle" aria-label="点小徐"><span class="sr">小徐</span></button>
@@ -892,8 +950,20 @@
       armTool.classList.remove('cycling');
       toolTag.classList.remove('show');
     }, 980);
+    setTimeout(() => doThink(), 1260);
   }
   setInterval(cycleTool, 5000);
+
+  /* ---------- 思考动作（换装间隙） ---------- */
+  function doThink() {
+    if (guideOpen()) return;
+    state.busy = true;
+    robotBob.classList.add('thinking');
+    setTimeout(() => {
+      robotBob.classList.remove('thinking');
+      state.busy = false;
+    }, 2100);
+  }
 
   const ACTIONS = { left: actLeft, right: actRight, sparkle: actSparkle };
 
@@ -914,7 +984,7 @@
     state.busy = false;
     pull.on = false;
     rot.mode = null; rot.ry = 0;
-    robotBob.classList.remove('spotlight', 'charged', 'launching');
+    robotBob.classList.remove('spotlight', 'charged', 'launching', 'thinking');
     robotPose.classList.remove('launch', 'landing', 'dragging');
     robotPose.style.transition = '';
     robotPose.style.transform = '';
