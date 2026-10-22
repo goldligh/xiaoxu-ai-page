@@ -120,6 +120,7 @@
   .stage {
     position: relative; flex: 1 1 42%; min-height: 250px;
     display: flex; align-items: center; justify-content: center;
+    perspective: 1000px;
   }
   .stage-glow {
     position: absolute; left: 50%; top: 54%; transform: translate(-50%,-50%);
@@ -128,12 +129,17 @@
     pointer-events: none;
   }
   .robot-bob { animation: bob 3.4s ease-in-out infinite; position: relative; z-index: 2; }
-  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+  @keyframes bob {
+    0%,100% { transform: translateY(0) rotateY(-2.5deg); }
+    50% { transform: translateY(-9px) rotateY(2.5deg); }
+  }
 
   .robot-pose {
     position: relative;
     height: clamp(230px, 34vh, 330px); aspect-ratio: 1 / 1.1;
-    transition: transform .9s cubic-bezier(.5,0,.75,.35);
+    transform: rotateY(0deg);
+    transition: transform .55s cubic-bezier(.2,.8,.3,1.12);
+    will-change: transform;
   }
   .robot-pose img {
     position: absolute; inset: 0; margin: auto;
@@ -149,9 +155,11 @@
     position: absolute; left: 50%; bottom: 4%; transform: translateX(-50%);
     width: 150px; height: 22px; border-radius: 50%;
     background: radial-gradient(closest-side, rgba(50,80,150,.28), transparent 70%);
-    transition: transform .9s ease, opacity .9s ease;
+    transition: transform .5s ease, opacity .5s ease;
     pointer-events: none; z-index: 1;
   }
+
+  .robot-pose.dragging img { transition: opacity .06s linear; transform: scale(1); }
 
   /* 高亮放大闪光 */
   .robot-bob.spotlight .robot-pose { animation: spotGlow .95s cubic-bezier(.2,.8,.3,1.1); }
@@ -193,44 +201,6 @@
     0% { transform: translate(0,0) scale(1); opacity: 1; }
     100% { transform: translate(var(--dx), 160px) scale(.2); opacity: 0; }
   }
-
-  /* 弧线箭头 */
-  .arc { position: absolute; left: 50%; top: 1%; transform: translateX(-50%); width: 74%; z-index: 4; pointer-events: none; opacity: 0; }
-  .arc.play { opacity: 1; }
-  .arc path.draw {
-    stroke-dasharray: 1; stroke-dashoffset: 1;
-    animation: drawArc .55s .05s ease forwards;
-  }
-  @keyframes drawArc { to { stroke-dashoffset: 0; } }
-  .arc.fade { animation: arcFade .4s 1.9s forwards; }
-  @keyframes arcFade { to { opacity: 0; } }
-  .arc.mirror { transform: translateX(-50%) scaleX(-1); }
-
-  /* 圆点指示器 */
-  .dot-ind {
-    position: absolute; top: 44%; width: 46px; height: 46px; border-radius: 50%;
-    border: 2px solid var(--blue); background: rgba(47,124,255,.06);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 4; pointer-events: none;
-    opacity: 0;
-  }
-  .dot-ind i { width: 11px; height: 11px; border-radius: 50%; background: var(--blue); display: block; }
-  .dot-ind.left { left: 6%; }
-  .dot-ind.right { right: 6%; }
-  .dot-ind.pop { animation: dotPop 2.4s cubic-bezier(.2,.8,.3,1) forwards; }
-  @keyframes dotPop {
-    0% { opacity: 0; transform: scale(.3); }
-    12% { opacity: 1; transform: scale(1.12); }
-    20% { transform: scale(1); }
-    80% { opacity: 1; }
-    100% { opacity: 0; transform: scale(.9); }
-  }
-  .dot-ind.pop::after {
-    content: ""; position: absolute; inset: -2px; border-radius: 50%;
-    border: 2px solid rgba(47,124,255,.55);
-    animation: ringPulse 1.2s .3s ease-out infinite;
-  }
-  @keyframes ringPulse { from { transform: scale(1); opacity: 1; } to { transform: scale(1.65); opacity: 0; } }
 
   /* 热区涟漪提示 */
   .ripple {
@@ -376,8 +346,9 @@
   .g-close:hover { background: #e8edf5; transform: rotate(90deg); }
   .g-heading { text-align: center; font-size: 18px; font-weight: 800; margin: 16px 0 12px; letter-spacing: .5px; }
 
-  .g-stage { position: relative; height: 250px; margin: 0 18px; display: flex; align-items: center; justify-content: center; }
-  .g-stage img { height: 215px; object-fit: contain; pointer-events: none; }
+  .g-stage { position: relative; height: 250px; margin: 0 18px; display: flex; align-items: center; justify-content: center; perspective: 600px; }
+  .g-stage img { height: 215px; object-fit: contain; pointer-events: none; transform: rotateY(-8deg); transition: transform .5s ease; }
+  .g-stage:hover img { transform: rotateY(8deg); }
   .hotbox { position: absolute; border: 1.5px dashed #9db9f5; border-radius: 16px; background: rgba(214,231,255,.14); cursor: pointer; transition: background .2s, border-color .2s; }
   .hotbox:hover { background: rgba(214,231,255,.45); border-color: var(--blue); }
   .hotbox.hb-left { left: 0; top: 12%; width: 27%; height: 76%; }
@@ -489,6 +460,7 @@
         <div class="ripple r3"></div>
 
         <div class="robot-shadow" id="robotShadow"></div>
+        <div class="flame-layer" id="flameLayer"></div>
         <div class="robot-bob" id="robotBob">
           <div class="spark-layer" id="robotSparkLayer"></div>
           <div class="robot-pose" id="robotPose">
@@ -499,22 +471,7 @@
           </div>
         </div>
 
-        <svg class="arc" id="arcLeft" viewBox="0 0 320 110">
-          <defs>
-            <marker id="ahL" markerWidth="9" markerHeight="9" refX="6.5" refY="4" orient="auto"><path d="M0.5,0.5 L7.5,4 L0.5,7.5 Z" fill="#2f7cff"/></marker>
-          </defs>
-          <path class="draw" d="M272 30 Q 160 -28 58 52" fill="none" stroke="#2f7cff" stroke-width="4.5" stroke-linecap="round" marker-end="url(#ahL)" pathLength="1"/>
-        </svg>
-        <svg class="arc mirror" id="arcRight" viewBox="0 0 320 110">
-          <defs>
-            <marker id="ahR" markerWidth="9" markerHeight="9" refX="6.5" refY="4" orient="auto"><path d="M0.5,0.5 L7.5,4 L0.5,7.5 Z" fill="#2f7cff"/></marker>
-          </defs>
-          <path class="draw" d="M272 30 Q 160 -28 58 52" fill="none" stroke="#2f7cff" stroke-width="4.5" stroke-linecap="round" marker-end="url(#ahR)" pathLength="1"/>
-        </svg>
-
-        <div class="dot-ind left" id="dotLeft"><i></i></div>
-        <div class="dot-ind right" id="dotRight"><i></i></div>
-        <div class="flame-layer" id="flameLayer"></div>
+        <div class="robot-shadow" id="robotShadow"></div>
 
         <button class="zone left" data-act="left" aria-label="点左侧空白"><span class="sr">左侧</span></button>
         <button class="zone center" data-act="sparkle" aria-label="点小徐"><span class="sr">小徐</span></button>
@@ -585,8 +542,8 @@
         <div class="hotbox hb-jet" data-act="sparkle"><span class="badge b3"></span></div>
       </div>
       <div class="g-list">
-        <div class="g-item" data-act="left"><span class="g-num n1">1</span><div><div class="t1">点击屏幕左侧</div><div class="t2">小徐向左转身，抬手打招呼</div></div></div>
-        <div class="g-item" data-act="right"><span class="g-num n2">2</span><div><div class="t1">点击屏幕右侧</div><div class="t2">小徐向右转身，抬手打招呼</div></div></div>
+        <div class="g-item" data-act="left"><span class="g-num n1">1</span><div><div class="t1">点击或左拖屏幕左侧</div><div class="t2">3D 流畅转身，抬手打招呼</div></div></div>
+        <div class="g-item" data-act="right"><span class="g-num n2">2</span><div><div class="t1">点击或右拖屏幕右侧</div><div class="t2">3D 流畅转身，抬手打招呼</div></div></div>
         <div class="g-item" data-act="sparkle"><span class="g-num n3">3</span><div><div class="t1">点击小徐</div><div class="t2">高亮放大，闪出星光</div></div></div>
         <div class="g-item"><span class="g-num n4">4</span><div><div class="t1">下拉小徐</div><div class="t2">按住下拉蓄力，松手喷火升空</div></div></div>
       </div>
@@ -608,8 +565,8 @@
     launch: '点火起飞，跟我出发！',
   };
   const BANNERS = {
-    left: '点左侧空白 · 小徐向左转身',
-    right: '点右侧空白 · 小徐向右转身',
+    left: '点按或左拖 · 小徐向左转身',
+    right: '点按或右拖 · 小徐向右转身',
     sparkle: '点小徐 · 高亮放大闪出星光',
     launch: '下拉松手 · 喷火升空',
   };
@@ -622,6 +579,12 @@
   const state = { pose: 'front', busy: false, chipSet: 0, chatStarted: false, timer: null, hintDone: false };
 
   const robotBob = $('#robotBob'), robotPose = $('#robotPose'), stage = $('#stage');
+  const robotShadow = $('#robotShadow');
+  const POSES = {
+    front: $('#robotPose img[data-pose="front"]'),
+    left: $('#robotPose img[data-pose="left"]'),
+    right: $('#robotPose img[data-pose="right"]'),
+  };
   const banner = $('#banner'), bannerText = $('#bannerText');
   const greeting = $('#greeting'), panel = $('#panel'), chatlog = $('#chatlog');
   const toastEl = $('#toast'), input = $('#input'), inputbar = $('#inputbar');
@@ -672,24 +635,16 @@
   /* ---------- 动作 ---------- */
   function actLeft() {
     if (state.busy) return;
-    setPose('left');
     showBanner(BANNERS.left);
     setGreeting(GREETINGS.left);
-    restartAnim($('#arcLeft'), 'play');
-    $('#arcLeft').classList.remove('fade'); void $('#arcLeft').offsetWidth; $('#arcLeft').classList.add('fade');
-    restartAnim($('#dotLeft'), 'pop');
-    scheduleIdle();
+    commitTurn(-1);
   }
 
   function actRight() {
     if (state.busy) return;
-    setPose('right');
     showBanner(BANNERS.right);
     setGreeting(GREETINGS.right);
-    restartAnim($('#arcRight'), 'play');
-    $('#arcRight').classList.remove('fade'); void $('#arcRight').offsetWidth; $('#arcRight').classList.add('fade');
-    restartAnim($('#dotRight'), 'pop');
-    scheduleIdle();
+    commitTurn(1);
   }
 
   function actSparkle() {
@@ -734,10 +689,62 @@
     }
   }
 
-  /* ---------- 下拉喷火升空 ---------- */
-  const THRESHOLD = 70;
+  /* ---------- 手势：左右 3D 旋转 + 下拉喷火升空 ---------- */
+  const THRESHOLD = 70;        // 下拉发射阈值（px）
+  const TURN_THRESHOLD = 16;   // 旋转松手阈值（deg）
+  const TURN_MAX = 38;         // 拖拽最大角度
   let suppressUntil = 0;
-  const pull = { on: false, y0: 0, dy: 0, moved: false, captured: false, toasted: false };
+  const pull = { on: false, y0: 0, dy: 0, captured: false, toasted: false };
+  const rot = { mode: null, x0: 0, ry: 0, lastDir: 1, toasted: false };
+
+  function applyPose(ry, dy) {
+    rot.ry = ry; pull.dy = dy;
+    robotPose.style.transform =
+      'translateY(' + (dy * 0.55) + 'px) rotateY(' + ry + 'deg) scale(' + (1 + dy / 1000) + ')';
+    robotShadow.style.transform =
+      'translateX(calc(-50% + ' + (-ry * 0.8) + 'px)) scaleX(' + Math.max(0.55, 1 - Math.abs(ry) / 110) + ')';
+  }
+
+  function setTurnProgress(dir, p) {
+    const side = dir < 0 ? 'left' : 'right';
+    const other = dir < 0 ? 'right' : 'left';
+    POSES.front.style.opacity = String(1 - p);
+    POSES[side].style.opacity = String(p);
+    POSES[other].style.opacity = '0';
+    POSES.front.style.transform = 'scale(1)';
+    POSES[side].style.transform = 'scale(1)';
+    POSES[other].style.transform = 'scale(1)';
+  }
+
+  function clearInlinePoses() {
+    ['front', 'left', 'right'].forEach((k) => {
+      POSES[k].style.opacity = '';
+      POSES[k].style.transform = '';
+    });
+    robotShadow.style.transform = '';
+  }
+
+  function springBack() {
+    robotPose.classList.remove('dragging');
+    applyPose(0, 0);
+    setTurnProgress(rot.lastDir, 0);
+    setTimeout(() => {
+      clearInlinePoses();
+      setPose('front');
+      state.busy = false;
+      scheduleIdle();
+    }, 640);
+  }
+
+  function commitTurn(dir, holdMs) {
+    state.busy = true;
+    clearTimeout(state.timer);
+    robotPose.classList.remove('dragging');
+    applyPose(dir * 30, 0);
+    setTurnProgress(dir, 1);
+    rot.lastDir = dir;
+    setTimeout(() => springBack(), holdMs || 1300);
+  }
 
   function doLaunch() {
     state.busy = true;
@@ -747,6 +754,7 @@
     robotPose.classList.remove('dragging');
     robotPose.style.transition = 'transform .25s ease-out';
     robotPose.style.transform = '';
+    robotShadow.style.transform = '';
     robotBob.classList.add('launching');
     setTimeout(() => {
       robotPose.style.transition = '';
@@ -770,36 +778,59 @@
   stage.addEventListener('pointerdown', (e) => {
     if (state.busy || guideOpen()) return;
     pull.on = true; pull.y0 = e.clientY; pull.dy = 0;
-    pull.moved = false; pull.captured = false; pull.toasted = false;
+    pull.captured = false; pull.toasted = false;
+    rot.mode = null; rot.x0 = e.clientX; rot.ry = 0; rot.toasted = false;
   });
   stage.addEventListener('pointermove', (e) => {
     if (!pull.on) return;
-    const dy = Math.max(0, e.clientY - pull.y0);
-    if (!pull.captured && dy > 12) {
-      pull.captured = true; pull.moved = true;
+    const dx = e.clientX - rot.x0;
+    const dyDown = Math.max(0, e.clientY - pull.y0);
+    if (!rot.mode && (Math.abs(dx) > 10 || dyDown > 10)) {
+      rot.mode = Math.abs(dx) > dyDown ? 'rot' : 'pull';
+      pull.captured = true;
+      robotPose.classList.add('dragging');
       try { stage.setPointerCapture(e.pointerId); } catch (_) {}
     }
-    pull.dy = Math.min(dy, 150);
-    robotPose.classList.add('dragging');
-    robotPose.style.transform = 'translateY(' + (pull.dy * 0.55) + 'px) scale(' + (1 + pull.dy / 1000) + ')';
-    const charged = pull.dy > THRESHOLD;
-    robotBob.classList.toggle('charged', charged);
-    if (charged && !pull.toasted) { pull.toasted = true; toast('松手发射！', 900); }
+    if (!rot.mode) return;
+    if (rot.mode === 'rot') {
+      const ry = Math.max(-TURN_MAX, Math.min(TURN_MAX, dx * 0.35));
+      applyPose(ry, 0);
+      setTurnProgress(ry < 0 ? -1 : 1, Math.min(Math.abs(ry) / 30, 1));
+      if (Math.abs(ry) > 24 && !rot.toasted) { rot.toasted = true; toast('松开转身！', 900); }
+    } else {
+      pull.dy = Math.min(dyDown, 150);
+      applyPose(0, pull.dy);
+      const charged = pull.dy > THRESHOLD;
+      robotBob.classList.toggle('charged', charged);
+      if (charged && !pull.toasted) { pull.toasted = true; toast('松手发射！', 900); }
+    }
   });
   function endPull() {
     if (!pull.on) return;
     pull.on = false;
     robotBob.classList.remove('charged');
-    if (pull.moved) suppressUntil = Date.now() + 450;
+    if (pull.captured) suppressUntil = Date.now() + 450;
+    if (rot.mode === 'rot') {
+      const ry = rot.ry;
+      rot.mode = null;
+      if (Math.abs(ry) > TURN_THRESHOLD && !state.busy) {
+        const dir = ry < 0 ? -1 : 1;
+        showBanner(dir < 0 ? BANNERS.left : BANNERS.right);
+        setGreeting(dir < 0 ? GREETINGS.left : GREETINGS.right);
+        commitTurn(dir);
+      } else {
+        springBack();
+      }
+      return;
+    }
+    rot.mode = null;
     if (pull.dy > THRESHOLD && !state.busy) {
       pull.dy = 0;
       doLaunch();
     } else {
       robotPose.style.transition = 'transform .45s cubic-bezier(.2,.8,.3,1.2)';
-      robotPose.style.transform = '';
-      robotPose.classList.remove('dragging');
-      setTimeout(() => { robotPose.style.transition = ''; }, 480);
-      pull.dy = 0;
+      applyPose(0, 0);
+      setTimeout(() => { robotPose.style.transition = ''; pull.dy = 0; }, 480);
     }
   }
   stage.addEventListener('pointerup', endPull);
@@ -825,10 +856,12 @@
     clearTimeout(state.timer);
     state.busy = false;
     pull.on = false;
+    rot.mode = null; rot.ry = 0;
     robotBob.classList.remove('spotlight', 'charged', 'launching');
     robotPose.classList.remove('launch', 'landing', 'dragging');
     robotPose.style.transition = '';
     robotPose.style.transform = '';
+    clearInlinePoses();
     setPose('front');
     setGreeting(GREETINGS.idle);
     hideBanner();
@@ -960,7 +993,7 @@
 
   /* ---------- 入场 ---------- */
   window.addEventListener('load', () => {
-    setTimeout(() => toast('点小徐两侧和她本身互动，按住下拉还能喷火升空～', 2800), 900);
+    setTimeout(() => toast('点小徐互动，左右拖拽 3D 转身，下拉还能喷火升空～', 2800), 900);
   });
 })();
 </script>
