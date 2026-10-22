@@ -72,6 +72,12 @@
     25% { opacity: 1; }
     100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(var(--sc)) rotate(var(--rot)); opacity: 0; }
   }
+  .logo-wrap {
+    width: 42px; height: 42px; flex: none;
+    border-radius: 12px; background: linear-gradient(145deg, #f2f7ff, #dde9ff);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-wrap img { width: 34px; height: 34px; object-fit: contain; }
   .title-box { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
   .title-row { display: flex; align-items: center; gap: 4px; }
   .title-row .name { font-size: 17px; font-weight: 700; }
@@ -175,13 +181,30 @@
     0%, 100% { transform: rotate(-22deg) translateY(0); }
     38%, 58% { transform: rotate(-30deg) translateY(-32%); }
   }
-  .tool-tag {
-    position: absolute; left: 55%; top: -6px; transform: translate(-50%, -100%);
-    background: rgba(23,32,56,.88); color: #fff; font-size: 11px; font-weight: 600;
-    padding: 4px 10px; border-radius: 12px; white-space: nowrap;
-    opacity: 0; transition: opacity .3s;
+
+  /* 左手接口标注 */
+  .port-tag {
+    position: absolute; left: 68%; top: 41%;
+    z-index: 3; pointer-events: none;
+    display: flex; align-items: center;
+    opacity: 0; transform: translateX(8px);
+    transition: opacity .5s ease .3s, transform .5s ease .3s;
   }
-  .tool-tag.show { opacity: 1; }
+  .port-tag.on { opacity: 1; transform: translateX(0); animation: tagFloat 3.2s ease-in-out .8s infinite; }
+  @keyframes tagFloat {
+    0%,100% { transform: translateX(0) translateY(0); }
+    50% { transform: translateX(0) translateY(-4px); }
+  }
+  .pt-dot { width: 8px; height: 8px; border-radius: 50%; background: #f5a623; box-shadow: 0 0 0 3px rgba(245,166,35,.22); flex: none; }
+  .pt-line { width: 30px; height: 1.5px; background: #f5a623; margin: 0 -1px; flex: none; }
+  .pt-label {
+    flex: none;
+    border: 1.5px solid #f5a623; border-radius: 999px;
+    background: rgba(255,255,255,.92);
+    color: #e8930c; font-size: 11.5px; font-weight: 700;
+    padding: 4px 12px; white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(245,166,35,.18);
+  }
 
   /* 思考动作：左手托腮 + 若有所思眼神 + 省略号气泡 */
   .think-arm {
@@ -486,6 +509,9 @@
 
     <!-- 头部 -->
     <header>
+      <div class="logo-wrap">
+        <img src="assets/logo.png" alt="徐工">
+      </div>
       <div class="title-box">
         <div class="title-row">
           <span class="name">小徐</span>
@@ -496,7 +522,7 @@
         <span class="subtitle">徐工智能助手</span>
       </div>
       <div class="spacer"></div>
-      <button class="hbtn" id="voiceBtn" title="语音播报">
+      <button class="hbtn on" id="voiceBtn" title="语音播报">
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
           <path d="M11 5 6.5 8.5H3v7h3.5L11 19V5z" fill="currentColor" stroke="none"/>
           <g class="waves" stroke="currentColor">
@@ -532,8 +558,10 @@
             <img src="assets/robot-right.png" data-pose="right" alt="小徐向右">
             <img src="assets/robot-fly.png" data-pose="fly" alt="小徐升空">
             <div class="arm-tool" id="armTool">
-              <img id="toolImg" src="assets/tool-hammer.png" alt="右臂属具">
-              <div class="tool-tag" id="toolTag"></div>
+              <img id="toolImg" src="assets/tool-hammer.png" alt="左臂属具">
+            </div>
+            <div class="port-tag" id="portTag">
+              <span class="pt-dot"></span><span class="pt-line"></span><span class="pt-label">左手接口</span>
             </div>
             <img class="think-arm" src="assets/arm-think.png" alt="">
             <div class="think-eyes">
@@ -573,17 +601,17 @@
           </button>
         </div>
         <div class="modes" id="modes">
-          <button class="mode active" data-mode="产品知识问答">
-            <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M6.8 8.2h10.4a1 1 0 0 1 1 1v5.2a1 1 0 0 1-1 1H11l-3 2.4v-2.4H6.8a1 1 0 0 1-1-1V9.2a1 1 0 0 1 1-1z" fill="#fff"/><path d="M10.3 10.9a1.9 1.9 0 1 1 2.9 1.6c-.6.4-.7.6-.7 1.2" stroke="#2f7cff" stroke-width="1.3" stroke-linecap="round" fill="none"/><circle cx="12.4" cy="15.6" r=".9" fill="#2f7cff"/></svg>
-            产品知识问答
+          <button class="mode active" data-mode="深度思考">
+            <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M12 6.8l1.3 2.7 2.9.4-2.1 2 .5 2.9L12 13.6l-2.6 1.2.5-2.9-2.1-2 2.9-.4z" fill="#fff"/></svg>
+            深度思考
           </button>
-          <button class="mode" data-mode="场景解决方案">
+          <button class="mode" data-mode="故障诊断">
             <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M14.9 6.9a3.6 3.6 0 0 0-4.7 4.5L6 15.6a1.6 1.6 0 0 0 2.3 2.3l4.2-4.2a3.6 3.6 0 0 0 4.5-4.7l-2.3 2.3-2-.5-.5-2z" fill="#fff"/></svg>
-            场景解决方案
+            故障诊断
           </button>
-          <button class="mode" data-mode="金融解决方案">
-            <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M8.5 7.5 12 11.5l3.5-4M12 11.5V17M8.8 13.2h6.4M8.8 15.6h6.4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            金融解决方案
+          <button class="mode" data-mode="产品问答">
+            <svg class="mi" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" fill="#2f7cff"/><path d="M6.8 8.2h10.4a1 1 0 0 1 1 1v5.2a1 1 0 0 1-1 1H11l-3 2.4v-2.4H6.8a1 1 0 0 1-1-1V9.2a1 1 0 0 1 1-1z" fill="#fff"/><path d="M10.3 10.9a1.9 1.9 0 1 1 2.9 1.6c-.6.4-.7.6-.7 1.2" stroke="#2f7cff" stroke-width="1.3" stroke-linecap="round" fill="none"/><circle cx="12.4" cy="15.6" r=".9" fill="#2f7cff"/></svg>
+            产品问答
           </button>
         </div>
       </section>
@@ -642,25 +670,26 @@
   const $$ = (s) => Array.from(document.querySelectorAll(s));
 
   const GREETINGS = {
-    idle: '下午好，需要我帮你做点什么？',
     left: '好嘞，我往左边看看',
     right: '好嘞，我往右边看看',
     sparkle: '看，我在闪闪发光！',
     launch: '点火起飞，跟我出发！',
   };
-  const BANNERS = {
-    left: '点按或左拖 · 小徐向左转身',
-    right: '点按或右拖 · 小徐向右转身',
-    sparkle: '点小徐 · 高亮放大闪出星光',
-    launch: '下拉松手 · 喷火升空',
-  };
-  const CHIP_SETS = [
-    ['如何查询设备保修信息', '怎么预约上门维保服务', '设备故障如何快速报修'],
-    ['起重机日常保养有哪些要点', '原厂配件从哪里购买', '如何查询附近服务网点'],
-    ['泵车操作注意事项', '设备租赁方案怎么选', '新机交付验收流程是什么'],
+  const TOOLS = [
+    { src: 'assets/tool-hammer.png', name: '破碎锤', verb: '破拆',
+      chips: ['破碎锤适用哪些工况', '如何更换其他属具', '属具日常保养注意事项'],
+      chipsAlt: ['破碎锤钎杆多久更换一次', '破碎锤作业油耗多少'] },
+    { src: 'assets/tool-claw.png', name: '液压抓斗', verb: '抓取',
+      chips: ['抓斗抓取力如何调节', '如何更换其他属具', '属具日常保养注意事项'],
+      chipsAlt: ['抓斗开合速度慢怎么办', '抓斗夹不住物料怎么调'] },
+    { src: 'assets/tool-scissors.png', name: '液压剪', verb: '剪切',
+      chips: ['液压剪能剪多粗的钢筋', '如何更换其他属具', '属具日常保养注意事项'],
+      chipsAlt: ['液压剪刃口怎么研磨', '液压剪剪切变慢原因'] },
   ];
+  const toolBanner = (i) => '属具组装 · ' + TOOLS[i].name;
+  const toolStatus = (i) => TOOLS[i].name + '已组装，准备' + TOOLS[i].verb + '作业';
 
-  const state = { pose: 'front', busy: false, chipSet: 0, chatStarted: false, timer: null, hintDone: false };
+  const state = { pose: 'front', busy: false, chipAlt: false, chatStarted: false, timer: null, hintDone: false };
 
   const robotBob = $('#robotBob'), robotPose = $('#robotPose'), stage = $('#stage');
   const robotShadow = $('#robotShadow');
@@ -670,7 +699,7 @@
     right: $('#robotPose img[data-pose="right"]'),
   };
   const banner = $('#banner'), bannerText = $('#bannerText');
-  const armTool = $('#armTool'), toolImg = $('#toolImg'), toolTag = $('#toolTag');
+  const armTool = $('#armTool'), toolImg = $('#toolImg'), portTag = $('#portTag');
   const greeting = $('#greeting'), panel = $('#panel'), chatlog = $('#chatlog');
   const toastEl = $('#toast'), input = $('#input'), inputbar = $('#inputbar');
   const chipsBox = $('#chips');
@@ -687,6 +716,7 @@
     $$('#robotPose img').forEach((img) => img.classList.toggle('show', img.dataset.pose === name));
     state.pose = name;
     armTool.classList.toggle('hidden', name !== 'front');
+    portTag.classList.toggle('on', name === 'front');
   }
 
   function setGreeting(text) {
@@ -700,7 +730,6 @@
     bannerText.textContent = text;
     banner.classList.add('show');
   }
-  function hideBanner() { banner.classList.remove('show'); }
 
   function restartAnim(el, cls) {
     el.classList.remove(cls);
@@ -713,29 +742,25 @@
     state.timer = setTimeout(() => {
       if (state.busy) return scheduleIdle();
       if (state.pose !== 'front') setPose('front');
-      setGreeting(GREETINGS.idle);
-      hideBanner();
+      setGreeting(toolStatus(toolIdx));
     }, 5000);
   }
 
   /* ---------- 动作 ---------- */
   function actLeft() {
     if (state.busy) return;
-    showBanner(BANNERS.left);
     setGreeting(GREETINGS.left);
     commitTurn(-1);
   }
 
   function actRight() {
     if (state.busy) return;
-    showBanner(BANNERS.right);
     setGreeting(GREETINGS.right);
     commitTurn(1);
   }
 
   function actSparkle() {
     if (state.busy) return;
-    showBanner(BANNERS.sparkle);
     setGreeting(GREETINGS.sparkle);
     restartAnim(robotBob, 'spotlight');
     spawnSparks($('#robotSparkLayer'), 14, 60, 130);
@@ -801,6 +826,7 @@
     POSES[side].style.transform = 'scale(1)';
     POSES[other].style.transform = 'scale(1)';
     armTool.style.opacity = String(1 - p);
+    portTag.style.opacity = String(1 - p);
   }
 
   function clearInlinePoses() {
@@ -810,6 +836,7 @@
     });
     robotShadow.style.transform = '';
     armTool.style.opacity = '';
+    portTag.style.opacity = '';
   }
 
   function springBack() {
@@ -836,7 +863,6 @@
 
   function doLaunch() {
     state.busy = true;
-    showBanner(BANNERS.launch);
     setGreeting(GREETINGS.launch);
     clearTimeout(state.timer);
     robotPose.classList.remove('dragging');
@@ -903,7 +929,6 @@
       rot.mode = null;
       if (Math.abs(ry) > TURN_THRESHOLD && !state.busy) {
         const dir = ry < 0 ? -1 : 1;
-        showBanner(dir < 0 ? BANNERS.left : BANNERS.right);
         setGreeting(dir < 0 ? GREETINGS.left : GREETINGS.right);
         commitTurn(dir);
       } else {
@@ -926,30 +951,24 @@
 
   function guideOpen() { return guide.classList.contains('open'); }
 
-  /* ---------- 右臂属具：每 5 秒循环换装（抬臂→换属具→落下） ---------- */
-  const TOOLS = [
-    { src: 'assets/tool-hammer.png', name: '破碎锤 Breaking Hammer' },
-    { src: 'assets/tool-claw.png', name: '莲花爪 Lotus Claw' },
-    { src: 'assets/tool-scissors.png', name: '鹰嘴剪 Olecranon Scissors' },
-  ];
+  /* ---------- 属具组装：每 5 秒循环换装（抬臂→换属具→落下） ---------- */
   let toolIdx = 0;
   function setTool(i) {
     toolIdx = ((i % TOOLS.length) + TOOLS.length) % TOOLS.length;
     toolImg.src = TOOLS[toolIdx].src;
+    showBanner(toolBanner(toolIdx));
+    setGreeting(toolStatus(toolIdx));
+    state.chipAlt = false;
+    renderToolChips();
   }
   function cycleTool() {
     if (state.busy || pull.on || guideOpen()) return;
     const next = (toolIdx + 1) % TOOLS.length;
-    toolTag.textContent = TOOLS[next].name;
-    toolTag.classList.add('show');
     armTool.classList.remove('cycling');
     void armTool.offsetWidth;
     armTool.classList.add('cycling');
     setTimeout(() => setTool(next), 400);
-    setTimeout(() => {
-      armTool.classList.remove('cycling');
-      toolTag.classList.remove('show');
-    }, 980);
+    setTimeout(() => armTool.classList.remove('cycling'), 980);
     setTimeout(() => doThink(), 1260);
   }
   setInterval(cycleTool, 5000);
@@ -990,12 +1009,12 @@
     robotPose.style.transform = '';
     clearInlinePoses();
     armTool.classList.remove('cycling', 'hidden');
-    toolTag.classList.remove('show');
+    portTag.classList.add('on');
     setPose('front');
-    setGreeting(GREETINGS.idle);
-    hideBanner();
+    setGreeting(toolStatus(toolIdx));
+    renderToolChips();
     if (state.chatStarted) resetChat();
-    toast('已回到欢迎页');
+    toast('已回到属具展示');
   });
 
   /* 交互说明 */
@@ -1017,15 +1036,17 @@
     setTimeout(() => stage.classList.remove('hint'), 600);
   }
 
-  /* ---------- 推荐问题 ---------- */
-  function renderChips() {
+  /* ---------- 推荐问题（随属具联动） ---------- */
+  function renderToolChips() {
     chipsBox.innerHTML = '';
-    CHIP_SETS[state.chipSet].forEach((text, i) => {
+    const set = state.chipAlt ? TOOLS[toolIdx].chipsAlt : TOOLS[toolIdx].chips;
+    set.forEach((text, i) => {
       const b = document.createElement('button');
       b.className = 'chip';
       b.textContent = text;
       b.style.animationDelay = (i * 0.06) + 's';
       b.addEventListener('click', () => {
+        if (text.includes('更换其他属具')) { cycleTool(); return; }
         input.value = text;
         input.dispatchEvent(new Event('input'));
         input.focus();
@@ -1033,15 +1054,14 @@
       chipsBox.appendChild(b);
     });
   }
-  renderChips();
 
   $('#refreshBtn').addEventListener('click', function () {
     this.classList.remove('spin'); void this.offsetWidth; this.classList.add('spin');
     chipsBox.classList.add('leaving');
     setTimeout(() => {
       chipsBox.classList.remove('leaving');
-      state.chipSet = (state.chipSet + 1) % CHIP_SETS.length;
-      renderChips();
+      state.chipAlt = !state.chipAlt;
+      renderToolChips();
     }, 230);
   });
 
@@ -1056,7 +1076,8 @@
   const REPLIES = [
     { k: ['保修', '质保'], r: '您好！您可以登录徐工官网服务专区，输入设备编号查询保修信息与质保期限；也可以拨打服务热线 400-110-9999，由客服协助查询。' },
     { k: ['预约', '维保', '保养', '上门'], r: '收到！上门维保可在徐工服务小程序预约：选择设备型号、填写故障描述后，系统会自动指派就近的服务工程师，一般 24 小时内响应。' },
-    { k: ['报修', '故障', '维修', '坏了'], r: '设备报修请准备好设备序列号与故障现象描述，拨打 400-110-9999 服务热线，或切换到「场景解决方案」模式，我会逐步帮您排查。' },
+    { k: ['报修', '故障', '维修', '坏了'], r: '设备报修请准备好设备序列号与故障现象描述，拨打 400-110-9999 服务热线，或切换到「故障诊断」模式，我会逐步帮您排查。' },
+    { k: ['属具', '抓斗', '液压剪', '破碎锤'], r: '当前展示的是小徐的左臂属具快换系统：破碎锤用于破拆作业、液压抓斗用于抓取作业、液压剪用于剪切作业。页面每 5 秒自动演示一次抬臂换装，您也可以点击「如何更换其他属具」立即切换。' },
     { k: ['配件', '零件', '购买'], r: '原厂配件可通过徐工配件商城或当地授权经销商购买，正品保障、全国联保，支持在线查询物流进度。' },
     { k: ['网点', '服务', '附近', '地址'], r: '您可以在徐工官网「服务网点」页面按城市查询最近网点，支持地图导航与电话直连，部分地区还提供驻矿驻点服务。' },
     { k: ['你好', '您好', 'hi', 'Hi'], r: '您好！我是徐工智能助手小徐，可以帮您查保修、约维保、报故障，也可以点我周围的空白区域和我互动哦～' },
@@ -1121,6 +1142,9 @@
   $('#micBtn').addEventListener('click', () => toast('语音输入为演示功能'));
 
   /* ---------- 入场 ---------- */
+  setPose('front');
+  setTool(0);
+  portTag.classList.add('on');
   window.addEventListener('load', () => {
     setTimeout(() => toast('点小徐互动，左右拖拽 3D 转身，下拉还能喷火升空～', 2800), 900);
   });
